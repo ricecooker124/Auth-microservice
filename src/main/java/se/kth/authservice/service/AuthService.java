@@ -3,9 +3,15 @@ package se.kth.authservice.service;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import se.kth.authservice.domain.AuthUser;
 import se.kth.authservice.repository.AuthUserRepository;
+import se.kth.authservice.web.dto.AuthDto;
+import se.kth.authservice.web.dto.PractitionerDto;
+import java.util.Optional;
+
+import java.time.LocalDate;
 
 import static se.kth.authservice.web.dto.AuthDto.*;
 import static se.kth.authservice.web.dto.PractitionerDto.*;
@@ -14,9 +20,14 @@ import static se.kth.authservice.web.dto.PractitionerDto.*;
 public class AuthService {
 
     private final AuthUserRepository userRepo;
+    private final RestClient restClient;
 
     public AuthService(AuthUserRepository userRepo) {
         this.userRepo = userRepo;
+        // Viktigt: hostnamn = service-namnet i docker-compose (journal-service)
+        this.restClient = RestClient.builder()
+                .baseUrl("http://journal-service:8081")
+                .build();
     }
 
     // -------------------------
@@ -31,7 +42,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
         }
 
-        // Samma fejk-token-upplägg som innan
         return new AuthResponse(
                 "fake-jwt-token",
                 user.getRole(),
@@ -50,9 +60,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
 
-        // OBS: SSN-unikhet sköts nu av journal-microservice
-        // (Patient-tabellen där). Här bryr vi oss bara om användaren.
-
         AuthUser newUser = AuthUser.builder()
                 .username(req.username())
                 .password(req.password()) // plaintext i lab
@@ -62,14 +69,26 @@ public class AuthService {
 
         userRepo.save(newUser);
 
-        // TODO: i en "riktig" microservice-setup skulle vi här
-        // trigga ett event / HTTP-call till journal-service
-        // för att skapa Patient där baserat på firstName, lastName, ssn osv.
+        // ⚡ Skicka vidare patient-info till journal-microservice
+        CreatePatientInternalRequest payload = new CreatePatientInternalRequest(
+                req.username(),
+                req.firstName(),
+                req.lastName(),
+                req.ssn(),
+                req.birthDate(),
+                req.gender().name()
+        );
+
+        restClient.post()
+                .uri("/internal/patients")
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
 
         return new AuthResponse(
                 null,
                 AuthUser.Role.PATIENT,
-                "Patient user registered successfully (auth-service)"
+                "Patient user registered successfully (auth-service + journal-service)"
         );
     }
 
@@ -92,17 +111,33 @@ public class AuthService {
 
         userRepo.save(newUser);
 
-        // Som med patient: själva Practitioner-entiteten i journal-DB
-        // får skapas via journal-service senare.
+        // ⚡ Skicka practitioner-data till journal-microservice
+        CreatePractitionerInternalRequest payload = new CreatePractitionerInternalRequest(
+                req.username(),
+                req.firstName(),
+                req.lastName(),
+                req.ssn(),
+                req.birthDate(),
+                req.gender().name(),
+                req.role().name(),
+                req.organizationId()
+        );
+
+        restClient.post()
+                .uri("/internal/practitioners")
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
+
         return new PractitionerRegisterResponse(
                 null,
                 AuthUser.Role.PRACTITIONER,
-                "Practitioner user registered successfully (auth-service)"
+                "Practitioner user registered successfully (auth-service + journal-service)"
         );
     }
 
     // -------------------------
-    // INIT ADMIN (om du vill ha det)
+    // INIT ADMIN
     // -------------------------
     @Transactional
     public void ensureAdminExists() {
@@ -117,4 +152,35 @@ public class AuthService {
             userRepo.save(admin);
         }
     }
+
+    public AuthUser getUserByUsername(String username) {
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+    }
+
+    // -------------------------
+    // Internal DTOs for journal-service calls
+    // -------------------------
+    private record CreatePatientInternalRequest(
+            String username,
+            String firstName,
+            String lastName,
+            String ssn,
+            LocalDate birthDate,
+            String gender
+    ) {}
+
+    private record CreatePractitionerInternalRequest(
+            String username,
+            String firstName,
+            String lastName,
+            String ssn,
+            LocalDate birthDate,
+            String gender,
+            String role,
+            Long organizationId
+    ) {}
 }

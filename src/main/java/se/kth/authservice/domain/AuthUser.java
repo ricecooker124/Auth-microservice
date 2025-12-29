@@ -27,7 +27,7 @@ public class AuthUser {
 
     @NotBlank
     @Column(nullable = false)
-    private String password;  // plaintext i labben
+    private String password;
 
     @Builder.Default
     @Column(nullable = false)

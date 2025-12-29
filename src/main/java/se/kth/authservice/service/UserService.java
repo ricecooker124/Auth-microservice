@@ -24,8 +24,6 @@ public class UserService {
     }
 
     private UserResponse toResponse(AuthUser u) {
-        // Vi kan inte läsa organisation eller namn från journal-service här,
-        // så de sätts till null. Frontend kan ändå visa username + role.
         return new UserResponse(
                 u.getId(),
                 u.getUsername(),

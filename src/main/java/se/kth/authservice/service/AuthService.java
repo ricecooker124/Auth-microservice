@@ -24,15 +24,11 @@ public class AuthService {
 
     public AuthService(AuthUserRepository userRepo) {
         this.userRepo = userRepo;
-        // Viktigt: hostnamn = service-namnet i docker-compose (journal-service)
         this.restClient = RestClient.builder()
                 .baseUrl("http://journal-service:8081")
                 .build();
     }
 
-    // -------------------------
-    // LOGIN
-    // -------------------------
     public AuthResponse login(LoginRequest req) {
         AuthUser user = userRepo.findByUsername(req.username())
                 .orElseThrow(() ->
@@ -49,27 +45,22 @@ public class AuthService {
         );
     }
 
-    // -------------------------
-    // REGISTER PATIENT
-    // -------------------------
     @Transactional
     public AuthResponse registerPatient(PatientRegisterRequest req) {
 
-        // Username måste vara unikt i auth-systemet
         if (userRepo.existsByUsername(req.username())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
 
         AuthUser newUser = AuthUser.builder()
                 .username(req.username())
-                .password(req.password()) // plaintext i lab
+                .password(req.password())
                 .role(AuthUser.Role.PATIENT)
                 .active(true)
                 .build();
 
         userRepo.save(newUser);
 
-        // ⚡ Skicka vidare patient-info till journal-microservice
         CreatePatientInternalRequest payload = new CreatePatientInternalRequest(
                 req.username(),
                 req.firstName(),
@@ -92,9 +83,7 @@ public class AuthService {
         );
     }
 
-    // -------------------------
-    // ADMIN: CREATE PRACTITIONER USER
-    // -------------------------
+
     @Transactional
     public PractitionerRegisterResponse createPractitionerUser(PractitionerRegisterRequest req) {
 
@@ -111,7 +100,6 @@ public class AuthService {
 
         userRepo.save(newUser);
 
-        // ⚡ Skicka practitioner-data till journal-microservice
         CreatePractitionerInternalRequest payload = new CreatePractitionerInternalRequest(
                 req.username(),
                 req.firstName(),
@@ -136,16 +124,13 @@ public class AuthService {
         );
     }
 
-    // -------------------------
-    // INIT ADMIN
-    // -------------------------
     @Transactional
     public void ensureAdminExists() {
         boolean adminExists = userRepo.existsByRole(AuthUser.Role.ADMIN);
         if (!adminExists) {
             AuthUser admin = AuthUser.builder()
                     .username("admin")
-                    .password("admin") // labb: enkel default
+                    .password("admin")
                     .role(AuthUser.Role.ADMIN)
                     .active(true)
                     .build();
@@ -161,9 +146,6 @@ public class AuthService {
                 ));
     }
 
-    // -------------------------
-    // Internal DTOs for journal-service calls
-    // -------------------------
     private record CreatePatientInternalRequest(
             String username,
             String firstName,

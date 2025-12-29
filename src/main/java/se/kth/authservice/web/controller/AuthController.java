@@ -16,26 +16,19 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
-        this.authService.ensureAdminExists();
+        //this.authService.ensureAdminExists(); seed data från innan
     }
 
-    // --- LOGIN ---
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest req) {
         return authService.login(req);
     }
 
-    // --- REGISTRERA PATIENT (öppen, t.ex. via register-formuläret) ---
     @PostMapping("/register-patient")
     public AuthResponse registerPatient(@Valid @RequestBody PatientRegisterRequest req) {
         return authService.registerPatient(req);
     }
 
-    // 🚫 INGEN register-practitioner här längre.
-    // Practitioners skapas enbart via admin-endpoints i UserController:
-    // POST /api/admin/users  eller  POST /api/admin/create-practitioner
-
-    // --- HÄMTA USER-INFO ---
     @GetMapping("/user")
     public AuthUserInfoResponse getUser(@RequestParam String username) {
         AuthUser u = authService.getUserByUsername(username);

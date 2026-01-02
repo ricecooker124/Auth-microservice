@@ -8,7 +8,6 @@ import java.time.LocalDate;
 
 public class AuthDto {
 
-    // Vi re-deklarerar Gender här så att frontend kan fortsätta skicka "MALE", "FEMALE", osv.
     public enum Gender { MALE, FEMALE, OTHER, UNKNOWN }
 
     public static record LoginRequest(

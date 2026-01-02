@@ -4,8 +4,6 @@ import se.kth.authservice.domain.AuthUser;
 
 public class UserDto {
 
-    // Vi behåller samma shape som din gamla UserResponse
-    // men organization/namn sätts till null här.
     public static record UserResponse(
             Long id,
             String username,

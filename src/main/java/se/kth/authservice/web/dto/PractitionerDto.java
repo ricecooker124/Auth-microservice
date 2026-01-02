@@ -9,8 +9,6 @@ import java.time.LocalDate;
 
 public class PractitionerDto {
 
-    // separat enum för practitioner-roll i journalvärlden,
-    // men AuthUser.Role.PRACTITIONER används på auth-sidan.
     public enum PractitionerRole { DOCTOR, STAFF }
 
     public static record PractitionerRegisterRequest(
@@ -22,7 +20,7 @@ public class PractitionerDto {
             @NotNull LocalDate birthDate,
             @NotNull Gender gender,
             @NotNull PractitionerRole role,
-            Long organizationId // journal-service bryr sig om detta senare
+            Long organizationId
     ) {}
 
     public static record PractitionerRegisterResponse(

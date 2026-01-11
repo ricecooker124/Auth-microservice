@@ -16,12 +16,6 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
-        //this.authService.ensureAdminExists(); seed data från innan
-    }
-
-    @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest req) {
-        return authService.login(req);
     }
 
     @PostMapping("/register-patient")

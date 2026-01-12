@@ -30,7 +30,7 @@ public class UserController {
         return userService.findAll();
     }
 
-    // ---------------- SKAPA PRACTITIONER (nytt: POST /api/admin/users) ----------------
+    // ---------------- SKAPA PRACTITIONER (POST /api/admin/users) ----------------
 
     /**
      * Den här endpointen är till för admin-frontend (och Postman):
@@ -56,8 +56,6 @@ public class UserController {
     ) {
         return authService.createPractitionerUser(req);
     }
-
-    // ---------------- ALTERNATIV PATH (du kan behålla eller ta bort) ----------------
 
     /**
      * Extra alias: /api/admin/create-practitioner

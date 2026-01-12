@@ -64,10 +64,8 @@ public class KeycloakAdminService {
         Response response = usersResource.create(user);
 
         if (response.getStatus() == 201) {
-            // Hämta användar-ID från Location header
             String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
 
-            // Tilldela roll
             assignRole(userId, role);
 
             return userId;

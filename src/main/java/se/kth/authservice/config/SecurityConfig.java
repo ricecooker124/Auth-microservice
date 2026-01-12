@@ -46,6 +46,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()
 
+                        // NEW: Complete profile - requires authentication (any authenticated user)
+                        .requestMatchers("/api/auth/complete-profile").authenticated()
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()

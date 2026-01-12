@@ -1,8 +1,8 @@
 package se.kth.authservice.service;
 
-import jakarta.transaction.Transactional;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import se.kth.authservice.domain.AuthUser;
@@ -88,6 +88,57 @@ public class AuthService {
             }
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Registration failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public AuthResponse completePatientProfile(CompleteProfileRequest req) {
+
+        if (userRepo.existsByUsername(req.username())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Profile already completed");
+        }
+
+        try {
+            // 1. Assign PATIENT role in Keycloak
+            keycloakAdminService.assignRoleToUser(req.username(), "PATIENT");
+
+            // 2. Create user in our auth database
+            AuthUser newUser = AuthUser.builder()
+                    .username(req.username())
+                    .password("KEYCLOAK_MANAGED")
+                    .role(AuthUser.Role.PATIENT)
+                    .active(true)
+                    .build();
+
+            userRepo.save(newUser);
+
+            // 3. Create patient record in journal-service
+            CreatePatientInternalRequest payload = new CreatePatientInternalRequest(
+                    req.username(),
+                    req.firstName(),
+                    req.lastName(),
+                    req.ssn(),
+                    req.birthDate(),
+                    req.gender().name()
+            );
+
+            restClient.post()
+                    .uri("/internal/patients")
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            return new AuthResponse(
+                    null,
+                    AuthUser.Role.PATIENT,
+                    "Profile completed successfully"
+            );
+
+        } catch (Exception e) {
+            System.err.println("=== COMPLETE PROFILE ERROR ===");
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to complete profile: " + e.getMessage());
         }
     }
 

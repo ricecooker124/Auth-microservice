@@ -82,6 +82,25 @@ public class KeycloakAdminService {
         realmResource.users().get(userId).roles().realmLevel().add(Collections.singletonList(role));
     }
 
+    // NEW: Assign role to existing user by username (for Keycloak self-registered users)
+    public void assignRoleToUser(String username, String roleName) {
+        // Find user by username
+        List<UserRepresentation> users = keycloak.realm(realm).users().search(username, true);
+
+        if (users.isEmpty()) {
+            throw new RuntimeException("User not found in Keycloak: " + username);
+        }
+
+        String userId = users.get(0).getId();
+
+        // Assign the role
+        RealmResource realmResource = keycloak.realm(realm);
+        RoleRepresentation role = realmResource.roles().get(roleName).toRepresentation();
+        realmResource.users().get(userId).roles().realmLevel().add(Collections.singletonList(role));
+
+        System.out.println("Assigned role " + roleName + " to user " + username + " (ID: " + userId + ")");
+    }
+
     public void deleteUser(String keycloakUserId) {
         keycloak.realm(realm).users().delete(keycloakUserId);
     }

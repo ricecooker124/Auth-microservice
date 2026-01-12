@@ -25,6 +25,16 @@ public class AuthDto {
             @NotNull Gender gender
     ) {}
 
+    // NEW: For completing profile after Keycloak registration
+    public static record CompleteProfileRequest(
+            @NotBlank String username,
+            @NotBlank String firstName,
+            @NotBlank String lastName,
+            @NotBlank String ssn,
+            @NotNull LocalDate birthDate,
+            @NotNull Gender gender
+    ) {}
+
     public static record AuthResponse(
             String token,
             AuthUser.Role role,

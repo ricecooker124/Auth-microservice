@@ -23,6 +23,12 @@ public class AuthController {
         return authService.registerPatient(req);
     }
 
+    // NEW: Complete profile after Keycloak registration
+    @PostMapping("/complete-profile")
+    public AuthResponse completeProfile(@Valid @RequestBody CompleteProfileRequest req) {
+        return authService.completePatientProfile(req);
+    }
+
     @GetMapping("/user")
     public AuthUserInfoResponse getUser(@RequestParam String username) {
         AuthUser u = authService.getUserByUsername(username);

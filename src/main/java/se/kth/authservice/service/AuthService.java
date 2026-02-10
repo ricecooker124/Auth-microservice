@@ -1,6 +1,7 @@
 package se.kth.authservice.service;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -20,11 +21,15 @@ public class AuthService {
     private final RestClient restClient;
     private final KeycloakAdminService keycloakAdminService;
 
-    public AuthService(AuthUserRepository userRepo, KeycloakAdminService keycloakAdminService) {
+    public AuthService(
+            AuthUserRepository userRepo,
+            KeycloakAdminService keycloakAdminService,
+            @Value("${journal.service.base-url}") String journalServiceBaseUrl
+    ) {
         this.userRepo = userRepo;
         this.keycloakAdminService = keycloakAdminService;
         this.restClient = RestClient.builder()
-                .baseUrl("http://journal-service:8081")
+                .baseUrl(journalServiceBaseUrl)
                 .build();
     }
 

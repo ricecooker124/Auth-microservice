@@ -27,7 +27,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepo, keycloakAdminService);
+        authService = new AuthService(userRepo, keycloakAdminService, "http://journal-service:8081");
     }
 
     @Test
